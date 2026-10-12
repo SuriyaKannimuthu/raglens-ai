@@ -161,51 +161,36 @@ flowchart LR
 
 ### 3.3 Backend component view
 
+Each node is a package with its main modules. Arrows point from a package to the packages it uses. Every package also uses `core/` (settings, text utilities, logging); those arrows are omitted.
+
 ```mermaid
 flowchart TB
-    subgraph API["api/ (HTTP layer)"]
-        ev[evaluations] --- ex[experiments] --- ds[datasets]
-        pg[playground] --- mo[monitoring] --- da[dashboard] --- sy[system]
-    end
-    subgraph EXP["experiments/"]
-        runner[runner - orchestrator]
-        cmp[comparison]
-        ins[insights]
-        trk[tracking - MLflow]
-    end
-    subgraph RAG["rag/"]
-        pipe[pipeline] --> chunk[chunking]
-        pipe --> emb[embeddings]
-        pipe --> vs[vector_store]
-        pipe --> bm[bm25]
-        pipe --> rr[reranker]
-        pipe --> llm[llm generators]
-        price[pricing]
-    end
-    subgraph EVAL["evaluation/"]
-        dset[dataset]
-        evaluator --> metrics
-        evaluator --> judge
-    end
-    subgraph MON["monitoring/"]
-        tracing
-        reg[metrics registry]
-    end
-    db[("database: models + session")]
+    api["<b>api/</b> - HTTP layer<br/>evaluations · experiments · datasets · playground<br/>monitoring · dashboard · system"]
+    exp["<b>experiments/</b><br/>runner · comparison · insights · tracking"]
+    eval["<b>evaluation/</b><br/>dataset · evaluator · metrics · judge"]
+    rag["<b>rag/</b><br/>pipeline · chunking · embeddings · vector_store<br/>bm25 · reranker · llm · pricing"]
+    mon["<b>monitoring/</b><br/>tracing · metrics registry"]
+    db[("<b>database/</b><br/>models · session")]
+    mlflow(["MLflow"])
+    claude(["Anthropic API"])
 
-    API --> EXP
-    API --> RAG
-    API --> EVAL
-    API --> MON
-    API --> db
-    runner --> pipe
-    runner --> evaluator
-    runner --> trk
-    runner --> db
-    runner --> tracing
-    runner --> reg
-    pipe --> tracing
+    api --> exp
+    api --> eval
+    api --> rag
+    api --> mon
+    api --> db
+    exp --> eval
+    exp --> rag
+    exp --> mon
+    exp --> db
+    exp -.-> mlflow
+    eval --> rag
+    eval -.-> claude
+    rag --> mon
+    rag -.-> claude
 ```
+
+Key runtime paths: the API layer creates a run, and `experiments/runner` drives `rag/pipeline` for each question. It scores results with `evaluation/evaluator`, records spans and counters in `monitoring/`, persists everything through `database/`, and finally logs the run to MLflow.
 
 ### 3.4 Layering rules
 
@@ -719,95 +704,123 @@ Standard `logging` to stdout, with the format `%(asctime)s %(levelname)-7s %(nam
 
 ```mermaid
 erDiagram
-    EVALUATION_RUNS ||--o{ SAMPLE_RESULTS : contains
-    EVALUATION_RUNS ||--o{ TRACES : produces
+    EVALUATION_RUNS ||--o{ SAMPLE_RESULTS : "contains"
+    EVALUATION_RUNS ||--o{ TRACES : "produces"
     SAMPLE_RESULTS ||--|| TRACES : "trace_id"
-
     EVALUATION_RUNS {
-        string id PK "uuid4 hex"
-        string name
-        string dataset
-        string status "queued|running|completed|failed"
-        string judge_mode "heuristic|llm"
-        json config "PipelineConfig"
-        json tags
-        json metrics "aggregates + quality_index"
-        json operational "latency/tokens/cost summary"
-        int total_samples
-        int completed_samples
-        int failed_samples
+        string id PK
+        string status
+        json config
+        json metrics
+        json operational
         bool is_baseline
-        string mlflow_run_id
-        text error
-        datetime created_at
-        datetime started_at
-        datetime completed_at
     }
     SAMPLE_RESULTS {
         string id PK
         string run_id FK
         string sample_id
-        string category
-        text question
-        text reference_answer
-        text generated_answer
-        json relevant_doc_ids
-        json retrieved "ranked chunks + relevance"
+        json retrieved
         json metrics
-        text judge_rationale
-        float latency_ms
-        float retrieval_ms
-        float generation_ms
-        int input_tokens
-        int output_tokens
-        float cost_usd
-        string status
-        text error
         string trace_id
     }
     TRACES {
-        string id PK "trace id"
-        string run_id FK "null for playground"
-        string sample_id
-        string source "evaluation|playground"
-        text question
-        string status "ok|error"
-        float duration_ms
+        string id PK
+        string run_id FK
+        string source
         json spans
-        json attributes
-        int input_tokens
-        int output_tokens
-        float cost_usd
-        datetime created_at
     }
 ```
 
-**Indexes:** `evaluation_runs(dataset)`, `(status)`, `(created_at)`; `sample_results(run_id)`; `traces(run_id)`, `(status)`, `(created_at)`.
+Playground traces have `run_id = NULL`. Every evaluated sample has exactly one trace.
 
-**Integrity:** `ON DELETE CASCADE` from runs to sample results and traces. SQLite enables `PRAGMA foreign_keys=ON` and `journal_mode=WAL` on every connection. `DELETE /evaluations/{id}` also deletes children explicitly, so behaviour is the same on databases without cascade support.
+### 9.2 Table definitions
 
-### 9.2 Design notes
+**`evaluation_runs`**: one row per evaluation run.
 
+| Column | Type | Notes |
+|---|---|---|
+| `id` | string(32) PK | `uuid4().hex` |
+| `name` | string(200) | User-supplied or generated from the configuration |
+| `dataset` | string(64), indexed | Dataset name |
+| `status` | string(16), indexed | `queued` \| `running` \| `completed` \| `failed` |
+| `judge_mode` | string(16) | `heuristic` \| `llm` |
+| `config` | JSON | Full `PipelineConfig` |
+| `tags` | JSON | Free-form user tags |
+| `metrics` | JSON | Aggregated metrics + `quality_index` |
+| `operational` | JSON | Latency / tokens / cost summary (§7.3) |
+| `total_samples` | int | Questions scheduled |
+| `completed_samples` | int | Questions scored (live progress) |
+| `failed_samples` | int | Questions that failed |
+| `is_baseline` | bool | At most one run is the baseline |
+| `mlflow_run_id` | string(64), nullable | Set when MLflow logging succeeds |
+| `error` | text, nullable | Failure reason |
+| `created_at` | datetime (UTC), indexed | Submission time |
+| `started_at` | datetime (UTC), nullable | Execution start |
+| `completed_at` | datetime (UTC), nullable | Completion or failure time |
+
+**`sample_results`**: one row per question per run.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | string(32) PK | |
+| `run_id` | FK → `evaluation_runs.id`, indexed | `ON DELETE CASCADE` |
+| `sample_id` | string(128) | Dataset sample id |
+| `category` | string(64), nullable | Dataset category |
+| `question`, `reference_answer` | text | Copied from the dataset (results stay readable if the dataset changes) |
+| `generated_answer` | text, nullable | Null when the sample failed before generation |
+| `relevant_doc_ids` | JSON | Ground-truth labels |
+| `retrieved` | JSON | Ranked chunks with scores and relevance (§9.4) |
+| `metrics` | JSON | Per-question metric values |
+| `judge_rationale` | text, nullable | One-sentence LLM-judge rationale |
+| `latency_ms`, `retrieval_ms`, `generation_ms` | float | Timings (retrieval includes reranking) |
+| `input_tokens`, `output_tokens` | int | Generation + reranker tokens |
+| `cost_usd` | float | Generation + reranker cost |
+| `status` | string(16) | `completed` \| `failed` |
+| `error` | text, nullable | Failure reason |
+| `trace_id` | string(32) | Links to `traces.id` |
+| `created_at` | datetime (UTC) | |
+
+**`traces`**: one row per traced query (evaluation or playground).
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | string(32) PK | Trace id (also exported as `raglens.trace_id` to OpenTelemetry) |
+| `run_id` | FK → `evaluation_runs.id`, nullable, indexed | Null for playground queries |
+| `sample_id` | string(128), nullable | |
+| `source` | string(16) | `evaluation` \| `playground` |
+| `question` | text | |
+| `status` | string(16), indexed | `ok` \| `error` |
+| `error` | text, nullable | |
+| `duration_ms` | float | End-to-end duration |
+| `spans` | JSON | Span list (§9.5) |
+| `attributes` | JSON | Generator model, projected model, judge tokens and cost, playground config |
+| `input_tokens`, `output_tokens`, `cost_usd` | int / float | Usage and cost |
+| `created_at` | datetime (UTC), indexed | |
+
+### 9.3 Design notes
+
+- **Indexes:** `evaluation_runs(dataset)`, `(status)`, `(created_at)`; `sample_results(run_id)`; `traces(run_id)`, `(status)`, `(created_at)`.
+- **Integrity:** `ON DELETE CASCADE` from runs to sample results and traces. SQLite enables `PRAGMA foreign_keys=ON` and `journal_mode=WAL` on every connection. `DELETE /evaluations/{id}` also deletes children explicitly, so behaviour is the same on databases without cascade support.
 - **JSON columns** hold configuration, metrics and span lists. They are read whole and never queried by inner field, which keeps the schema stable as metrics evolve.
 - **Timezone-aware timestamps.** A `UTCDateTime` `TypeDecorator` stores and returns UTC-aware datetimes on every backend. SQLite drops offsets, and without this the API would emit naive timestamps that browsers interpret as local time.
 - **Ids** are `uuid4().hex` (32 chars), generated application-side.
 - **Schema management.** Tables are created with `metadata.create_all` at startup. There are no migrations yet; adopting Alembic is listed in §16.
 
-### 9.3 Retrieved-chunk record (`sample_results.retrieved[]`)
+### 9.4 Retrieved-chunk record (`sample_results.retrieved[]`)
 
 ```json
 { "rank": 1, "chunk_id": "doc-error-codes::1", "doc_id": "doc-error-codes",
   "title": "API Error Codes", "score": 0.380232, "text": "…", "relevant": true }
 ```
 
-### 9.4 Span record (`traces.spans[]`)
+### 9.5 Span record (`traces.spans[]`)
 
 ```json
 { "name": "retrieval", "start_ms": 0.012, "duration_ms": 2.104, "status": "ok",
   "error": null, "attributes": { "method": "hybrid", "k": 20, "hits": 20 } }
 ```
 
-### 9.5 Dataset schema and validation
+### 9.6 Dataset schema and validation
 
 ```json
 {

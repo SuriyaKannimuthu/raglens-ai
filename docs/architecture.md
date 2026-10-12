@@ -1,6 +1,6 @@
 # Architecture
 
-> For the complete design (algorithms, metric formulas, data model, API contracts, decisions), see the [Technical Design Document](technical-design.md).
+> For the complete design (algorithms, metric formulas, data model, API contracts, decisions), see the [Technical Design Document (PDF)](RAGLens-AI-Technical-Design-Document.pdf).
 
 RAGLens AI has two deployable parts: a FastAPI backend (`backend/`) that runs and stores evaluations, and a Next.js dashboard (`frontend/`) that reads them. The dashboard calls the backend through a `/api/*` rewrite, so the browser only ever talks to one origin.
 
