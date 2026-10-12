@@ -1,0 +1,11 @@
+# Optional integrations - install only what you enable.
+
+# Neural embeddings: embedding_model="sentence-transformers/all-MiniLM-L6-v2"
+sentence-transformers
+
+# Qdrant vector store: VECTOR_STORE=qdrant (in-memory, or QDRANT_URL for a server)
+qdrant-client
+
+# OpenTelemetry tracing: OTEL_ENABLED=true (+ OTEL_EXPORTER_OTLP_ENDPOINT for Jaeger/Tempo/Langfuse)
+opentelemetry-sdk
+opentelemetry-exporter-otlp-proto-http

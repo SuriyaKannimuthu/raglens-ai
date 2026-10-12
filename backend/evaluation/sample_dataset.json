@@ -1,0 +1,354 @@
+{
+  "name": "sample_dataset",
+  "description": "Product documentation for Nimbus Cloud, a fictional storage platform, including distractor pages (changelog with outdated values, SDK vs CLI, storage classes vs backups). Questions cover single-fact lookups, exact-identifier (keyword) lookups, paraphrased questions and multi-document reasoning.",
+  "documents": [
+    {
+      "id": "doc-pricing",
+      "title": "Plans and Pricing",
+      "text": "Nimbus Cloud offers three plans. The Starter plan is free and includes 5 GB of storage, one workspace and community support. It is intended for evaluation and personal projects.\n\nThe Pro plan costs $49 per month per workspace and includes 500 GB of storage, unlimited collaborators and single sign-on. Storage beyond the included 500 GB is billed as overage at $0.08 per GB per month. Pro invoices are issued on the first day of each billing cycle.\n\nThe Enterprise plan uses custom pricing negotiated with the Nimbus sales team. Enterprise contracts are annual and include volume discounts on storage, customer-managed encryption keys and a named technical account manager. Plan changes take effect immediately and are prorated to the day."
+    },
+    {
+      "id": "doc-rate-limits",
+      "title": "API Rate Limits",
+      "text": "Every workspace is subject to API rate limits that protect the platform from abuse. Starter workspaces may send 60 requests per minute. Pro workspaces may send 600 requests per minute, and Enterprise workspaces may send 6,000 requests per minute. Short bursts of up to twice the per-minute limit are tolerated for ten seconds.\n\nEach API response includes the X-RateLimit-Limit and X-RateLimit-Remaining headers so clients can pace themselves. When a client exceeds its limit, the API responds with HTTP 429 Too Many Requests and a Retry-After header that states how many seconds to wait before sending another request. Clients should honour Retry-After rather than retrying immediately."
+    },
+    {
+      "id": "doc-error-codes",
+      "title": "API Error Codes",
+      "text": "Nimbus API errors return a JSON body with a code and a message. ERR-4012 means the access token has expired; obtain a new token with your refresh token or log in again. ERR-4031 means the workspace has been suspended, usually because of an unpaid invoice; contact billing to restore access.\n\nERR-4090 signals a conflict caused by concurrent writes to the same object. Re-fetch the object to get its latest ETag and retry the write with the If-Match header. ERR-5003 indicates an upstream storage timeout. It is a transient server-side error, so clients should retry with exponential backoff, starting at one second. Persistent ERR-5003 errors should be reported to support with the request ID."
+    },
+    {
+      "id": "doc-backups",
+      "title": "Backups and Restore",
+      "text": "Nimbus takes automatic snapshots of every workspace every 6 hours. Snapshot retention depends on the plan: Starter workspaces keep snapshots for 7 days, Pro workspaces keep them for 35 days and Enterprise workspaces keep them for 365 days.\n\nRestores are started from the Backups page or with the API. A restore takes roughly 15 minutes per 100 GB of data, and the workspace is read-only while a restore is running. Enterprise workspaces additionally support point-in-time restore to any second within the last 7 days. Restoring a snapshot never deletes newer snapshots."
+    },
+    {
+      "id": "doc-sla",
+      "title": "Service Level Agreement",
+      "text": "Nimbus commits to a monthly uptime of 99.9% for Pro workspaces and 99.99% for Enterprise workspaces. The Starter plan has no uptime commitment. Uptime is measured by external probes that run every minute from three regions.\n\nIf monthly uptime falls below the commitment, customers receive a service credit of 10% of that month's fee. If uptime falls below 99.0%, the credit increases to 25% of the monthly fee. Credits must be claimed through a support ticket within 30 days of the end of the affected month and are applied to the next invoice. Scheduled maintenance announced at least 72 hours in advance does not count as downtime."
+    },
+    {
+      "id": "doc-security",
+      "title": "Security and Encryption",
+      "text": "All customer data is encrypted at rest with AES-256 and in transit with TLS 1.3. Older TLS versions are rejected. Nimbus completes a SOC 2 Type II audit every year, and the latest report is available under NDA.\n\nEnterprise customers can bring their own keys: customer-managed encryption keys are stored in the customer's cloud KMS and Nimbus never sees the key material. Platform-managed keys are rotated automatically every 90 days. Revoking a customer-managed key makes the workspace data unreadable within five minutes, which is the recommended way to perform a cryptographic erase."
+    },
+    {
+      "id": "doc-sso",
+      "title": "Single Sign-On and User Provisioning",
+      "text": "Single sign-on is available on the Pro and Enterprise plans and supports both SAML 2.0 and OpenID Connect (OIDC) identity providers such as Okta, Microsoft Entra ID and Google Workspace. Starter workspaces sign in with email and password only.\n\nAutomated user provisioning through SCIM 2.0 is available on the Enterprise plan only; Pro workspaces must invite users manually. The default SSO session timeout is 12 hours. Administrators can configure the timeout anywhere from 1 hour to 72 hours, and can force all sessions to sign out from the security settings page."
+    },
+    {
+      "id": "doc-regions",
+      "title": "Regions and Data Residency",
+      "text": "Nimbus operates three regions: us-east-1 in Virginia, eu-central-1 in Frankfurt and ap-southeast-2 in Sydney. A workspace's region is chosen at creation time and data at rest never leaves that region unless replication is enabled.\n\nCross-region replication copies objects asynchronously to a second region of your choice, typically within 15 minutes. Replication is billed at $0.02 per GB transferred, in addition to the storage used in the destination region. Moving a workspace to a different region requires a migration request and is not available self-service."
+    },
+    {
+      "id": "doc-cli",
+      "title": "Command Line Interface",
+      "text": "The nimbus command line interface is installed with pip install nimbus-cli and requires Python 3.9 or later. After installing, run nimbus login to authenticate in the browser; credentials are stored in ~/.nimbus/config.toml.\n\nUse nimbus sync to mirror a local folder into a workspace. Adding the --dry-run flag prints the uploads and deletions that would happen without changing any files, which is recommended before the first sync. The --exclude flag accepts glob patterns, and nimbus sync --watch keeps syncing as files change."
+    },
+    {
+      "id": "doc-webhooks",
+      "title": "Webhooks",
+      "text": "Webhooks notify your application about events such as object.created, object.deleted and backup.completed. Each delivery is an HTTP POST with a JSON payload, and your endpoint must respond with a 2xx status within 10 seconds.\n\nEvery request is signed with HMAC-SHA256 using your webhook secret, and the signature is sent in the Nimbus-Signature header. Verify the signature before trusting the payload. Failed deliveries are retried up to 8 times with exponential backoff over 24 hours, after which the event is moved to the dead-letter list in the dashboard."
+    },
+    {
+      "id": "doc-support",
+      "title": "Support Tiers",
+      "text": "Starter customers are supported through the community forum. Pro customers get email support with a first response within 8 business hours.\n\nEnterprise customers get 24/7 phone and email support. Severity 1 incidents, meaning production is down or data is at risk, receive a first response within 1 hour. Severity 2 incidents receive a response within 4 hours. Every Enterprise account is assigned a named technical account manager who runs quarterly architecture reviews."
+    },
+    {
+      "id": "doc-data-lifecycle",
+      "title": "Data Deletion and Retention",
+      "text": "Deleted objects are moved to the trash, where they stay for 30 days and can be restored by any editor. After 30 days they are permanently purged. Deleting an entire workspace starts a 14-day grace period during which an owner can cancel the deletion; afterwards all data is erased permanently.\n\nUnder GDPR, workspace owners can request a full data export, which Nimbus delivers within 30 days. Audit logs record every administrative action and are retained for 1 year on Pro, while Enterprise workspaces retain audit logs for 7 years to support regulatory requirements."
+    },
+    {
+      "id": "doc-storage-classes",
+      "title": "Storage Classes and Lifecycle Rules",
+      "text": "Objects are stored in the Standard class by default. The Infrequent Access class costs $0.03 per GB per month and has a 30-day minimum storage duration; deleting an object earlier is billed as if it had been stored for 30 days.\n\nThe Archive class is the cheapest option, but archived objects must be restored before they can be read, and an archive restore takes up to 12 hours. Lifecycle rules can move objects to Infrequent Access or Archive automatically after a configurable number of days since the last modification."
+    },
+    {
+      "id": "doc-versioning",
+      "title": "Object Versioning",
+      "text": "When versioning is enabled on a folder, every overwrite keeps the previous version, up to 100 versions per object. Deleting a versioned object adds a delete marker instead of removing data, and any earlier version can be promoted back to current.\n\nNon-current versions are kept for 90 days and then expire automatically. Versions count toward storage usage, so frequently rewritten files can grow storage costs quickly. Versioning cannot be disabled once enabled, only suspended."
+    },
+    {
+      "id": "doc-permissions",
+      "title": "Roles and Permissions",
+      "text": "Workspaces have four roles. Owners manage billing and can delete the workspace. Admins manage members, single sign-on and security settings. Editors can upload, modify and delete objects, and Viewers have read-only access.\n\nPermissions can be narrowed per folder with access rules, and share links can be created with an expiry date of up to 90 days. Every role change is written to the audit log. A workspace must always have at least one Owner."
+    },
+    {
+      "id": "doc-billing",
+      "title": "Billing and Invoices",
+      "text": "Nimbus bills workspaces monthly by credit card, or annually by invoice for Enterprise contracts. Annual prepayment on the Pro plan receives a 15% discount. Invoices include applicable taxes and are emailed to the billing contact.\n\nIf a payment fails, Nimbus retries the charge after 3, 7 and 14 days. A workspace with an invoice unpaid for more than 14 days is suspended and API calls return ERR-4031 until payment is received. Downgrades take effect at the end of the current billing period."
+    },
+    {
+      "id": "doc-status-incidents",
+      "title": "Status Page and Incident Communication",
+      "text": "Live platform health is published on the Nimbus status page, where customers can subscribe to email or SMS notifications per region. During a Severity 1 incident, the status page is updated at least every 30 minutes until the incident is resolved.\n\nA written postmortem is published within 5 business days of any incident that breaches the SLA. Planned maintenance is announced on the status page at least 72 hours in advance and is scheduled outside business hours of the affected region."
+    },
+    {
+      "id": "doc-api-auth",
+      "title": "API Authentication",
+      "text": "The Nimbus API accepts two kinds of credentials. Long-lived API keys are intended for servers and can be scoped to read-only or read-write access. OAuth access tokens are intended for user-facing applications and expire after 1 hour.\n\nRefresh tokens are valid for 30 days and can be exchanged for a new access token at the token endpoint. API keys should be rotated at least every 90 days and must never be embedded in client-side code. Requests without valid credentials receive HTTP 401."
+    },
+    {
+      "id": "doc-sdk",
+      "title": "Python SDK",
+      "text": "The official Python SDK is installed with pip install nimbus-sdk and requires Python 3.10 or later. It wraps every API endpoint, handles pagination and retries transient errors such as timeouts automatically with exponential backoff.\n\nCreate a client with nimbus.Client() and it will read the NIMBUS_API_KEY environment variable. The SDK supports asynchronous usage through nimbus.AsyncClient. Unlike the command line interface, the SDK does not mirror folders; use the CLI for synchronisation."
+    },
+    {
+      "id": "doc-mobile",
+      "title": "Mobile Apps",
+      "text": "The Nimbus mobile apps are available for iOS 16 or later and Android 12 or later. Files can be marked as available offline, and changes made offline are uploaded when the device reconnects.\n\nIf the same file was changed on two devices while offline, the mobile app keeps both copies and appends the device name to the conflicting file. Camera uploads can be enabled to back up photos automatically over Wi-Fi only or over any connection."
+    },
+    {
+      "id": "doc-limits",
+      "title": "Service Limits",
+      "text": "A single object can be up to 5 TB. Objects larger than 100 MB should use multipart upload, which supports up to 10,000 parts per object. Object names can be up to 1,024 bytes long.\n\nEach workspace can register up to 100 webhook endpoints and 50 lifecycle rules. A folder can hold an unlimited number of objects, but listing requests return at most 1,000 objects per page. Limits can be raised for Enterprise workspaces on request."
+    },
+    {
+      "id": "doc-changelog",
+      "title": "Platform Changelog",
+      "text": "Version 2.4 raised the Pro API rate limit from 300 to 600 requests per minute and increased webhook delivery retries from 5 to 8 attempts. It also added the backup.completed webhook event.\n\nVersion 2.3 introduced cross-region replication between us-east-1 and eu-central-1, and extended Pro snapshot retention from 14 to 35 days. Version 2.2 added SCIM provisioning for Enterprise workspaces and OIDC support for single sign-on."
+    }
+  ],
+  "samples": [
+    {
+      "id": "q01",
+      "category": "factual",
+      "question": "How much does the Pro plan cost per month?",
+      "reference_answer": "The Pro plan costs $49 per month per workspace.",
+      "relevant_doc_ids": [
+        "doc-pricing"
+      ]
+    },
+    {
+      "id": "q02",
+      "category": "keyword",
+      "question": "What does error ERR-4012 mean?",
+      "reference_answer": "ERR-4012 means the access token has expired; get a new token with the refresh token or log in again.",
+      "relevant_doc_ids": [
+        "doc-error-codes"
+      ]
+    },
+    {
+      "id": "q03",
+      "category": "factual",
+      "question": "How many API requests per minute can a Starter workspace make?",
+      "reference_answer": "Starter workspaces may send 60 requests per minute.",
+      "relevant_doc_ids": [
+        "doc-rate-limits"
+      ]
+    },
+    {
+      "id": "q04",
+      "category": "factual",
+      "question": "How long are backup snapshots kept on the Pro plan?",
+      "reference_answer": "Pro workspaces keep snapshots for 35 days.",
+      "relevant_doc_ids": [
+        "doc-backups"
+      ]
+    },
+    {
+      "id": "q05",
+      "category": "factual",
+      "question": "What uptime does the Enterprise SLA guarantee?",
+      "reference_answer": "Enterprise workspaces have a monthly uptime commitment of 99.99%.",
+      "relevant_doc_ids": [
+        "doc-sla"
+      ]
+    },
+    {
+      "id": "q06",
+      "category": "factual",
+      "question": "Which encryption algorithm protects data at rest?",
+      "reference_answer": "Data at rest is encrypted with AES-256.",
+      "relevant_doc_ids": [
+        "doc-security"
+      ]
+    },
+    {
+      "id": "q07",
+      "category": "factual",
+      "question": "Is SCIM user provisioning available on the Pro plan?",
+      "reference_answer": "No. SCIM provisioning is available on the Enterprise plan only; Pro workspaces must invite users manually.",
+      "relevant_doc_ids": [
+        "doc-sso"
+      ]
+    },
+    {
+      "id": "q08",
+      "category": "keyword",
+      "question": "Which HTTP header carries the webhook signature?",
+      "reference_answer": "The HMAC-SHA256 signature is sent in the Nimbus-Signature header.",
+      "relevant_doc_ids": [
+        "doc-webhooks"
+      ]
+    },
+    {
+      "id": "q09",
+      "category": "keyword",
+      "question": "What is the region code for the Frankfurt data center?",
+      "reference_answer": "The Frankfurt region is eu-central-1.",
+      "relevant_doc_ids": [
+        "doc-regions"
+      ]
+    },
+    {
+      "id": "q10",
+      "category": "paraphrase",
+      "question": "How can I preview what a folder sync would change without touching any files?",
+      "reference_answer": "Run nimbus sync with the --dry-run flag to print the uploads and deletions without changing files.",
+      "relevant_doc_ids": [
+        "doc-cli"
+      ]
+    },
+    {
+      "id": "q11",
+      "category": "paraphrase",
+      "question": "What happens to items I remove by mistake?",
+      "reference_answer": "Deleted objects stay in the trash for 30 days and can be restored by any editor before they are purged.",
+      "relevant_doc_ids": [
+        "doc-data-lifecycle"
+      ]
+    },
+    {
+      "id": "q12",
+      "category": "paraphrase",
+      "question": "As an Enterprise customer, how fast will someone respond if production goes down?",
+      "reference_answer": "Severity 1 incidents for Enterprise customers receive a first response within 1 hour, with 24/7 phone support.",
+      "relevant_doc_ids": [
+        "doc-support"
+      ]
+    },
+    {
+      "id": "q13",
+      "category": "factual",
+      "question": "What compensation do customers get if monthly uptime drops below 99.0%?",
+      "reference_answer": "A service credit of 25% of the monthly fee.",
+      "relevant_doc_ids": [
+        "doc-sla"
+      ]
+    },
+    {
+      "id": "q14",
+      "category": "keyword",
+      "question": "What does ERR-5003 indicate and should the client retry?",
+      "reference_answer": "ERR-5003 is an upstream storage timeout, a transient error; clients should retry with exponential backoff starting at one second.",
+      "relevant_doc_ids": [
+        "doc-error-codes"
+      ]
+    },
+    {
+      "id": "q15",
+      "category": "factual",
+      "question": "How many times is a failed webhook delivery retried?",
+      "reference_answer": "Failed deliveries are retried up to 8 times with exponential backoff over 24 hours.",
+      "relevant_doc_ids": [
+        "doc-webhooks"
+      ]
+    },
+    {
+      "id": "q16",
+      "category": "factual",
+      "question": "What happens when a client exceeds its rate limit?",
+      "reference_answer": "The API returns HTTP 429 Too Many Requests with a Retry-After header stating how many seconds to wait.",
+      "relevant_doc_ids": [
+        "doc-rate-limits"
+      ]
+    },
+    {
+      "id": "q17",
+      "category": "reasoning",
+      "question": "Roughly how long does it take to restore 300 GB from a snapshot?",
+      "reference_answer": "About 45 minutes, since restores take roughly 15 minutes per 100 GB.",
+      "relevant_doc_ids": [
+        "doc-backups"
+      ]
+    },
+    {
+      "id": "q18",
+      "category": "factual",
+      "question": "Can Enterprise customers use their own encryption keys, and how often are platform keys rotated?",
+      "reference_answer": "Yes, Enterprise customers can use customer-managed keys stored in their cloud KMS; platform-managed keys are rotated every 90 days.",
+      "relevant_doc_ids": [
+        "doc-security"
+      ]
+    },
+    {
+      "id": "q19",
+      "category": "reasoning",
+      "question": "A Pro workspace stores 600 GB. What is its monthly bill?",
+      "reference_answer": "$57: the $49 Pro fee plus 100 GB of overage at $0.08 per GB.",
+      "relevant_doc_ids": [
+        "doc-pricing"
+      ]
+    },
+    {
+      "id": "q20",
+      "category": "multi-hop",
+      "question": "Which plans include single sign-on, and what support response time comes with the cheaper of those plans?",
+      "reference_answer": "SSO is included in Pro and Enterprise. Pro, the cheaper one, gets email support with a first response within 8 business hours.",
+      "relevant_doc_ids": [
+        "doc-sso",
+        "doc-support"
+      ]
+    },
+    {
+      "id": "q21",
+      "category": "factual",
+      "question": "How much does cross-region replication cost and how quickly are objects copied?",
+      "reference_answer": "Replication is billed at $0.02 per GB transferred and objects are typically copied within 15 minutes.",
+      "relevant_doc_ids": [
+        "doc-regions"
+      ]
+    },
+    {
+      "id": "q22",
+      "category": "multi-hop",
+      "question": "For Enterprise workspaces, how long are audit logs retained and how long are backup snapshots kept?",
+      "reference_answer": "Enterprise audit logs are retained for 7 years and Enterprise snapshots are kept for 365 days.",
+      "relevant_doc_ids": [
+        "doc-data-lifecycle",
+        "doc-backups"
+      ]
+    },
+    {
+      "id": "q23",
+      "category": "factual",
+      "question": "What is the default session timeout for SSO logins?",
+      "reference_answer": "The default SSO session timeout is 12 hours, configurable from 1 to 72 hours.",
+      "relevant_doc_ids": [
+        "doc-sso"
+      ]
+    },
+    {
+      "id": "q24",
+      "category": "paraphrase",
+      "question": "Which Python release does the command-line tool need?",
+      "reference_answer": "The nimbus CLI requires Python 3.9 or later.",
+      "relevant_doc_ids": [
+        "doc-cli"
+      ]
+    },
+    {
+      "id": "q25",
+      "category": "keyword",
+      "question": "How should I handle ERR-4090?",
+      "reference_answer": "ERR-4090 is a concurrent-write conflict; re-fetch the object to get its latest ETag and retry with the If-Match header.",
+      "relevant_doc_ids": [
+        "doc-error-codes"
+      ]
+    },
+    {
+      "id": "q26",
+      "category": "paraphrase",
+      "question": "After asking for a copy of all my data under GDPR, when will I receive it?",
+      "reference_answer": "Nimbus delivers a GDPR data export within 30 days.",
+      "relevant_doc_ids": [
+        "doc-data-lifecycle"
+      ]
+    }
+  ]
+}

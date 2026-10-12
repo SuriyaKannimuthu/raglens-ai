@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #04070d;
+  --bg-elevated: #060b13;
+  --panel: #0a111c;
+  --panel-2: #0d1624;
+  --panel-hover: #101b2b;
+  --border: #142131;
+  --border-strong: #1e3246;
+  --grid: #13202f;
+  --text: #e6f1f8;
+  --text-2: #9fb3c4;
+  --muted: #5d7387;
+  --accent: #22d3ee;
+  --accent-strong: #06b6d4;
+  --accent-soft: rgba(34, 211, 238, 0.12);
+  --good: #34d399;
+  --warning: #fbbf24;
+  --serious: #fb923c;
+  --critical: #f87171;
+  --baseline: #8b5cf6;
+  /* Validated categorical order for comparing runs (dark surface). */
+  --series-1: #0891b2;
+  --series-2: #8b5cf6;
+  --series-3: #d97706;
+  --series-4: #db2777;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-panel-hover: var(--panel-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-grid: var(--grid);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-good: var(--good);
+  --color-warning: var(--warning);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
+  --color-baseline: var(--baseline);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 55% -10%, rgba(34, 211, 238, 0.06), transparent 60%),
+    radial-gradient(900px 500px at 100% 100%, rgba(52, 211, 153, 0.04), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(13, 22, 36, 0.92), rgba(9, 15, 25, 0.92));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+}
+
+.panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.glow-text {
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.45);
+}
+
+.brand-gradient {
+  background: linear-gradient(90deg, #22d3ee 0%, #8b5cf6 55%, #ec4899 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(52, 211, 153, 0); }
+}
+
+.live-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes orbit-spin {
+  to { transform: rotate(360deg); }
+}
+
+.orbit {
+  transform-origin: center;
+  animation: orbit-spin 60s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit, .live-dot { animation: none; }
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+}
