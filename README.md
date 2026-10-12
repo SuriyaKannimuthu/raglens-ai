@@ -2,6 +2,8 @@
 
 ### RAG evaluation & observability platform
 
+> 📘 **[Technical Design Document](docs/technical-design.md)**: the detailed design of the system (requirements, architecture, RAG pipeline algorithms, metric formulas, data model, API contracts, frontend design, deployment, testing strategy and design decisions).
+
 RAGLens AI evaluates, compares and monitors **Retrieval-Augmented Generation (RAG)** pipelines. It runs a labelled question set through a RAG configuration and scores retrieval and answer quality. It also records latency, tokens and cost for every query and shows the results in a dashboard. You can compare configurations and block quality regressions in CI.
 
 It works **out of the box with no API key**. The default stack (local embeddings, BM25, an extractive answer generator and deterministic metrics) runs fully offline. Add an Anthropic API key to generate, rerank and judge answers with Claude.
@@ -583,7 +585,8 @@ raglens-ai/
 │   ├── next.config.ts               # /api/* → backend proxy
 │   └── Dockerfile
 ├── docs/
-│   ├── architecture.md              # design and request lifecycle
+│   ├── technical-design.md          # detailed technical design document
+│   ├── architecture.md              # architecture overview and request lifecycle
 │   └── screenshots/
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
@@ -591,7 +594,7 @@ raglens-ai/
 └── README.md
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the run lifecycle, data model and observability design.
+For the full design, see the [Technical Design Document](docs/technical-design.md); [docs/architecture.md](docs/architecture.md) is a shorter overview.
 
 ---
 
