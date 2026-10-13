@@ -2,7 +2,7 @@
 
 ### RAG evaluation & observability platform
 
-> 📘 **[Technical Design Document (PDF)](docs/RAGLens-AI-Technical-Design-Document.pdf)**: the detailed design of the system (requirements, architecture, RAG pipeline algorithms, metric formulas, data model, API contracts, frontend design, deployment, testing strategy and design decisions).
+> 📘 **[Technical Design Document (PDF)](docs/RAGLens-AI-Technical-Design-Document.pdf)**: Part 1 explains RAGLens in plain language for everyone; Part 2 is the full technical design (architecture, RAG pipeline algorithms, metric formulas, data model, API, frontend, deployment and testing); Part 3 covers design trade-offs, limitations and the roadmap.
 
 RAGLens AI evaluates, compares and monitors **Retrieval-Augmented Generation (RAG)** pipelines. It runs a labelled question set through a RAG configuration and scores retrieval and answer quality. It also records latency, tokens and cost for every query and shows the results in a dashboard. You can compare configurations and block quality regressions in CI.
 
